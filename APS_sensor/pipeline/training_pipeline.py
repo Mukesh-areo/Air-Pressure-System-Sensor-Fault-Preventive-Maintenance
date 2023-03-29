@@ -12,6 +12,9 @@ from APS_sensor.components.model_pusher import ModelPusher
 
 class TrainingPipeline:
     def __init__(self):
+        is_pipeline_running=False
+   
+        self.training_pipeline_config = TrainingPipelineConfig()
         training_pipeline_config = TrainingPipelineConfig()
         self.data_ingestion_config = DataIngestionConfig(training_pipeline_config=training_pipeline_config)
         self.training_pipeline_config=training_pipeline_config
@@ -83,6 +86,8 @@ class TrainingPipeline:
 
     def run_pipeline(self):
         try:
+            TrainingPipeline.is_pipeline_running=True
+
             data_ingestion_artifact:DataIngestionArtifact = self.start_data_ingestion()
             data_validation_artifact= self.start_data_validaton(data_ingestion_artifact=data_ingestion_artifact)
             data_transformation_artifact = self.start_data_transformation(data_validation_artifact=data_validation_artifact)
@@ -91,5 +96,7 @@ class TrainingPipeline:
             if not model_eval_artifact.is_model_accepted:
                 raise Exception("Trained model is not better than the best model")
             model_pusher_artifact = self.start_model_pusher(model_eval_artifact)
+            TrainingPipeline.is_pipeline_running=False
         except Exception as e:
+            TrainingPipeline.is_pipeline_running=False
             raise  SensorException(e,sys)
